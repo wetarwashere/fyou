@@ -6,6 +6,7 @@ import { kbbi } from "./commands/kbbi";
 import { dictionary } from "./commands/dictionary";
 import { commands, setCommand } from "./utils/func"
 import { charSearch } from "./commands/charSearch";
+import { getAvatar } from "./commands/getAvatar";
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds] })
 client.cooldowns = new Collection()
@@ -16,6 +17,7 @@ setCommand(randomAnime)
 setCommand(kbbi)
 setCommand(dictionary)
 setCommand(charSearch)
+setCommand(getAvatar)
 
 client.on(Events.InteractionCreate, async (interaction) => {
   if (!interaction.isChatInputCommand()) return

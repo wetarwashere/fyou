@@ -5,13 +5,15 @@ import { randomAnime } from "./randomAnime";
 import { kbbi } from "./kbbi";
 import { dictionary } from "./dictionary";
 import { charSearch } from "./charSearch";
+import { getAvatar } from "./getAvatar";
 
 const commands = [
   ping.data.toJSON(),
   randomAnime.data.toJSON(),
   kbbi.data.toJSON(),
   dictionary.data.toJSON(),
-  charSearch.data.toJSON()
+  charSearch.data.toJSON(),
+  getAvatar.data.toJSON()
 ]
 const rest = new REST({ version: "10" }).setToken(config.token);
 
