@@ -13,7 +13,7 @@ type ApiData = {
       }
     }
     title: string,
-    title_english: string,
+    title_english?: string,
     title_japanese: string,
     score: number,
     scored_by: number,
@@ -23,6 +23,11 @@ type ApiData = {
 
 const getRandomAnime = async () => {
   const data = await fetch("https://api.jikan.moe/v4/random/anime")
+
+  if (data.status !== 200) {
+    console.error(`Error occured when fetching data`)
+  }
+
   const json = await data.json() as ApiData
 
   return json
@@ -64,7 +69,7 @@ export const randomAnime: SlashCommand = {
             value: `${data?.score || "N/A"} by ${data?.scored_by || "N/A"} people`,
           },
         )
-        .setImage(data?.images?.jpg.image_url || data?.images?.webp.image_url || "")
+        .setImage(data?.images?.jpg?.image_url || data?.images?.webp?.image_url || "")
         .setColor("Blue")
         .setFooter({ iconURL: user.displayAvatarURL(), text: `Ran by ${user.username}` })
         .setTimestamp()
@@ -73,7 +78,7 @@ export const randomAnime: SlashCommand = {
     } catch (error) {
       console.error(`Error occured when fetching data ${error}`)
 
-      return await interaction.editReply({ content: "Api fetching failed" })
+      return await interaction.editReply({ content: "❌ Api fetching failed, try again later" })
     }
   }
 }

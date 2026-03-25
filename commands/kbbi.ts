@@ -10,7 +10,12 @@ interface ApiData {
 }
 
 const getWordData = async (input: string) => {
-  const data = await fetch(`https://openapi.x-labs.my.id/kbbi/search/${input}`)
+  const data = await fetch(`https://openapi.x-labs.my.id/kbbi/search/${encodeURIComponent(input)}`)
+
+  if (data.status !== 200) {
+    console.error(`Error occured when fetching data`)
+  }
+
   const json = await data.json() as ApiData
 
   return json
@@ -23,7 +28,7 @@ export const kbbi: SlashCommand = {
   ),
 
   async execute(interaction) {
-    const word = interaction.options.getString("word", true)
+    const word = interaction.options.getString("word", true).toLowerCase()
     await interaction.deferReply()
 
     try {
@@ -57,9 +62,9 @@ export const kbbi: SlashCommand = {
 
       return await interaction.editReply({ embeds: [embed] })
     } catch (error) {
-      console.error(`Error occured when fetching data ${error}`)
+      console.error(`Error occured when fetching data: ${error}`)
 
-      return await interaction.editReply({ content: "Api fetching failed" })
+      return await interaction.editReply({ content: "❌ Api fetching failed, try again later" })
     }
   },
 }

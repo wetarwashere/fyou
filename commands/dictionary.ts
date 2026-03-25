@@ -13,7 +13,12 @@ interface ApiData {
 }
 
 const getWordFromDict = async (word: string) => {
-  const data = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${word}`)
+  const data = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`)
+
+  if (data.status !== 200) {
+    console.error(`Error occured when fetching data`)
+  }
+
   const json = await data.json() as ApiData[]
 
   return json
@@ -29,7 +34,7 @@ export const dictionary: SlashCommand = {
     ),
 
   async execute(interaction) {
-    const word = interaction.options.getString("word", true)
+    const word = interaction.options.getString("word", true).toLowerCase()
     await interaction.deferReply()
 
     try {
@@ -63,9 +68,9 @@ export const dictionary: SlashCommand = {
 
       await interaction.editReply({ embeds: [embed] })
     } catch (error) {
-      console.error(`Error occured when fetching data ${error}`)
+      console.error(`Error occured when fetching data: ${error}`)
 
-      return await interaction.editReply({ content: "Api fetching failed" })
+      return await interaction.editReply({ content: "❌ Api fetching failed, try again later" })
     }
   },
 }

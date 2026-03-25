@@ -4,12 +4,14 @@ import { ping } from "./utility/ping"
 import { randomAnime } from "./randomAnime";
 import { kbbi } from "./kbbi";
 import { dictionary } from "./dictionary";
+import { charSearch } from "./charSearch";
 
 const commands = [
   ping.data.toJSON(),
   randomAnime.data.toJSON(),
   kbbi.data.toJSON(),
-  dictionary.data.toJSON()
+  dictionary.data.toJSON(),
+  charSearch.data.toJSON()
 ]
 const rest = new REST({ version: "10" }).setToken(config.token);
 
