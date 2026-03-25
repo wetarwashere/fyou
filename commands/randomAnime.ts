@@ -33,6 +33,7 @@ const getRandomAnime = async () => {
   return json
 }
 export const randomAnime: SlashCommand = {
+  cooldown: 12,
   data: new SlashCommandBuilder()
     .setName("random-anime")
     .setDescription("Get random anime, powered by jikan api"),

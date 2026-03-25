@@ -55,6 +55,7 @@ const getAnimeChar = async (char: string) => {
   return json
 }
 export const charSearch: SlashCommand = {
+  cooldown: 10,
   data: new SlashCommandBuilder()
     .setName("search-char")
     .setDescription("Search an anime character by name")
@@ -86,9 +87,7 @@ export const charSearch: SlashCommand = {
         return nickMatch || nameMatch
       })
 
-      if (result?.mal_id === undefined) {
-        return
-      }
+      if (!result?.mal_id) return
 
       const charOrigin = await getCharOrigin(result?.mal_id)
       const user = interaction.user

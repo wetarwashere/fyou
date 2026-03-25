@@ -6,7 +6,9 @@ import { kbbi } from "./commands/kbbi";
 import { dictionary } from "./commands/dictionary";
 import { commands, setCommand } from "./utils/func"
 import { charSearch } from "./commands/charSearch";
-import { getAvatar } from "./commands/getAvatar";
+import { getAvatar } from "./commands/utility/getAvatar";
+import { help } from "./commands/utility/help";
+import { setCooldown } from "./commands/utility/setCooldown";
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds] })
 client.cooldowns = new Collection()
@@ -18,6 +20,8 @@ setCommand(kbbi)
 setCommand(dictionary)
 setCommand(charSearch)
 setCommand(getAvatar)
+setCommand(help)
+setCommand(setCooldown)
 
 client.on(Events.InteractionCreate, async (interaction) => {
   if (!interaction.isChatInputCommand()) return
@@ -28,6 +32,10 @@ client.on(Events.InteractionCreate, async (interaction) => {
     console.error(`${interaction.commandName} is not a valid command`)
   }
 
+  const commandName = command?.data?.name
+
+  if (!commandName) return
+
   const { cooldowns } = client
 
   if (!cooldowns.has(command?.data?.name)) {
@@ -36,7 +44,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
   const now = Date.now()
   const timestamps = cooldowns.get(command?.data?.name)
-  const defaultCooldownDuration = 10
+  const defaultCooldownDuration = 4
   const cooldownAmount = (command?.cooldown ?? defaultCooldownDuration) * 1000
 
   if (timestamps?.has(interaction.user.id)) {
@@ -45,7 +53,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
     if (now < expired) {
       const expireTimestamps = Math.round(expired / 1000)
 
-      return await interaction.reply({ content: `Calm down, you can do it again after <t:${expireTimestamps}:R>.` })
+      return await interaction.reply({ content: `⏰ Calm down, you can do it again after <t:${expireTimestamps}:R>.` })
     }
   }
 

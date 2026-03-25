@@ -5,7 +5,9 @@ import { randomAnime } from "./randomAnime";
 import { kbbi } from "./kbbi";
 import { dictionary } from "./dictionary";
 import { charSearch } from "./charSearch";
-import { getAvatar } from "./getAvatar";
+import { getAvatar } from "./utility/getAvatar";
+import { help } from "./utility/help";
+import { setCooldown } from "./utility/setCooldown";
 
 const commands = [
   ping.data.toJSON(),
@@ -13,7 +15,9 @@ const commands = [
   kbbi.data.toJSON(),
   dictionary.data.toJSON(),
   charSearch.data.toJSON(),
-  getAvatar.data.toJSON()
+  getAvatar.data.toJSON(),
+  help.data.toJSON(),
+  setCooldown.data.toJSON()
 ]
 const rest = new REST({ version: "10" }).setToken(config.token);
 

@@ -1,7 +1,8 @@
 import { EmbedBuilder, SlashCommandBuilder } from "discord.js"
-import type { SlashCommand } from "../utils/types"
+import type { SlashCommand } from "../../utils/types"
 
 export const getAvatar: SlashCommand = {
+  cooldown: 2,
   data: new SlashCommandBuilder()
     .setName("avatar")
     .setDescription("Get the avatar of a user")

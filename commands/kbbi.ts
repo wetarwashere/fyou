@@ -21,6 +21,7 @@ const getWordData = async (input: string) => {
   return json
 }
 export const kbbi: SlashCommand = {
+  cooldown: 6,
   data: new SlashCommandBuilder().setName("kbbi").setDescription("Search a word for its definition in the kbbi").addStringOption(option =>
     option.setName("word")
       .setDescription("The word that you want to find")

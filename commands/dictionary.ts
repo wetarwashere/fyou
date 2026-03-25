@@ -24,6 +24,7 @@ const getWordFromDict = async (word: string) => {
   return json
 }
 export const dictionary: SlashCommand = {
+  cooldown: 6,
   data: new SlashCommandBuilder()
     .setName("dictionary")
     .setDescription("Get a word from english dictionary")
