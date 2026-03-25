@@ -1,0 +1,20 @@
+{
+  "name": "botnya",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "start": "bun run index.ts",
+    "del": "bun run commands/unregister.ts",
+    "add": "bun run commands/register.ts"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "discord.js": "^14.25.1"
+  }
+}
