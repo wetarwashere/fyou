@@ -1,5 +1,6 @@
-import { EmbedBuilder, SlashCommandBuilder } from "discord.js"
+import { ChatInputCommandInteraction, EmbedBuilder, SlashCommandBuilder } from "discord.js"
 import type { SlashCommand } from "../utils/types"
+import { failEmbed } from "../utils/embeds"
 
 interface ApiData {
   data: {
@@ -12,8 +13,10 @@ interface ApiData {
 const getWordData = async (input: string) => {
   const data = await fetch(`https://openapi.x-labs.my.id/kbbi/search/${encodeURIComponent(input)}`)
 
-  if (data.status !== 200) {
+  if (!data.ok) {
     console.error(`Error occured when fetching data`)
+
+    return
   }
 
   const json = await data.json() as ApiData
@@ -21,51 +24,67 @@ const getWordData = async (input: string) => {
   return json
 }
 export const kbbi: SlashCommand = {
-  cooldown: 6,
   data: new SlashCommandBuilder().setName("kbbi").setDescription("Search a word for its definition in the kbbi").addStringOption(option =>
     option.setName("word")
       .setDescription("The word that you want to find")
       .setRequired(true)
   ),
 
-  async execute(interaction) {
-    const word = interaction.options.getString("word", true).toLowerCase()
-    await interaction.deferReply()
+  async execute(context, args) {
+    const executor = context instanceof ChatInputCommandInteraction ? context?.user : context?.author
+    let wordQuery: string | null = null;
+
+    if (context instanceof ChatInputCommandInteraction) {
+      wordQuery = context?.options?.getString("word", true).toLowerCase()
+
+      await context?.deferReply()
+    } else {
+      wordQuery = args?.join(" ") || null
+    }
+
+    if (!wordQuery) {
+      return context instanceof ChatInputCommandInteraction ? await context?.editReply({
+        embeds: [failEmbed("Char Searcher", "Give a word to be searched", executor)]
+      }) : await context?.reply({ embeds: [failEmbed("Char Searcher", "Give a word to be searched", executor)] })
+    }
 
     try {
-      const wordData = await getWordData(word)
+      const wordData = await getWordData(wordQuery)
 
-      if (!wordData?.data || wordData?.data?.length === 0) {
-        return await interaction.editReply(`The word ${word} can not be found!`)
+      if (!wordData || wordData.data.length === 0) {
+        return context instanceof ChatInputCommandInteraction ? await context?.editReply({ embeds: [failEmbed("Dictionary Searcher", `The word **${wordQuery}** can not be found!`, executor)] }) : await context?.reply({ embeds: [failEmbed("Dictionary Searcher", `The word **${wordQuery}** can not be found!`, executor)] })
       }
 
       const datas = wordData?.data
-      const user = interaction.user
       const embed = new EmbedBuilder()
         .setTitle("KBBI Searcher")
         .addFields(
           {
             name: "🔤  Word",
-            value: word.charAt(0).toUpperCase() + word.slice(1)
+            value: wordQuery?.charAt(0).toUpperCase() + wordQuery?.slice(1)
           },
           {
             name: "🗣️  Lema",
-            value: datas[0]?.lema.replace(/\d+$/g, "") || "Unknown"
+            value: datas[0]?.lema?.replace(/\d+$/g, "") || "Unknown"
           },
           {
             name: "📖  Definition",
-            value: datas[0]?.arti.map((arti, index) => `${index + 1}. ${arti.deskripsi}`).join("\n") || "Unknown"
+            value: datas[0]?.arti?.map((arti, index) => `${index + 1}. ${arti.deskripsi}`).join("\n") || "Unknown"
           }
         )
         .setColor("Blue")
-        .setFooter({ iconURL: user.displayAvatarURL(), text: `Req by ${user.username}` })
+        .setFooter({ iconURL: executor?.displayAvatarURL(), text: `Req by ${executor?.username}` })
         .setTimestamp()
 
-      return await interaction.editReply({ embeds: [embed] })
+      if (context instanceof ChatInputCommandInteraction) {
+        return await context?.editReply({ embeds: [embed] })
+      } else {
+        return await context?.reply({ embeds: [embed] })
+      }
     } catch (error) {
       console.error(`Error occured when fetching data: ${error}`)
 
-      return await interaction.editReply({ content: "❌ Api fetching failed, try again later" })
+      return context instanceof ChatInputCommandInteraction ? await context?.editReply({ embeds: [failEmbed("Dictionary Searcher", "Api fetching failed, try again later", executor)] }) : await context?.reply({ embeds: [failEmbed("Dictionary Searcher", "Api fetching failed, try again later", executor)] })
     }
   },
 }

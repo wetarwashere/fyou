@@ -1,10 +1,11 @@
 import { ChatInputCommandInteraction, EmbedBuilder, SlashCommandBuilder } from "discord.js"
 import type { SlashCommand } from "../utils/types"
+import { getCharOrigin } from "../utils/func"
 import { failEmbed } from "../utils/embeds"
 
-type ApiData = {
+interface ApiData {
   data: {
-    mal_id: number,
+    mal_id: number
     images?: {
       jpg: {
         image_url: string
@@ -13,17 +14,15 @@ type ApiData = {
         image_url: string
       }
     }
-    title: string,
-    title_english?: string,
-    title_japanese: string,
-    score: number,
-    scored_by: number,
-    genres: { mal_id: number, name: string, url: string }[]
+    name: string
+    name_kanji: string
+    nicknames: string[]
+    favorites: number
   }
 }
 
-const getReqdomAnime = async () => {
-  const data = await fetch("https://api.jikan.moe/v4/random/anime")
+const getReqdomCharacter = async () => {
+  const data = await fetch("https://api.jikan.moe/v4/random/characters")
 
   if (!data.ok) {
     console.error(`Error occured when fetching data`)
@@ -35,11 +34,11 @@ const getReqdomAnime = async () => {
 
   return json
 }
-export const randomAnime: SlashCommand = {
+export const randomChar: SlashCommand = {
   data: new SlashCommandBuilder()
-    .setName("random-anime")
-    .setDescription("Get random anime, powered by jikan api"),
-  aliases: ["ra"],
+    .setName("random-char")
+    .setDescription("Get random character from anime, game, etc"),
+  aliases: ["rc"],
 
   async execute(context) {
     const executor = context instanceof ChatInputCommandInteraction ? context?.user : context?.author
@@ -47,37 +46,43 @@ export const randomAnime: SlashCommand = {
     if (context instanceof ChatInputCommandInteraction) await context?.deferReply()
 
     try {
-      const animeData = await getReqdomAnime()
+      const charData = await getReqdomCharacter()
 
-      if (!animeData) {
-        return context instanceof ChatInputCommandInteraction ? await context?.editReply({ embeds: [failEmbed("Reqdom Anime", "Failed to fetch random anime", executor)] }) : await context?.reply({ embeds: [failEmbed("Random Anime", "Failed to fetch random anime", executor)] })
+      if (!charData) {
+        return context instanceof ChatInputCommandInteraction ? await context?.editReply({ embeds: [failEmbed("Reqdom Char", "Failed to fetch random character", executor)] }) : await context?.reply({ embeds: [failEmbed("Random Char", "Failed to fetch random character", executor)] })
       }
 
-      const { data } = animeData
+      const { data } = charData
+      const charOrigin = await getCharOrigin(data?.mal_id)
+
+      if (!charOrigin) {
+        return context instanceof ChatInputCommandInteraction ? await context?.editReply({ embeds: [failEmbed("Reqdom Char", "Failed to fetch character origin", executor)] }) : await context?.reply({ embeds: [failEmbed("Random Char", "Failed to fetch character origin", executor)] })
+      }
+
       const embed = new EmbedBuilder()
         .setTitle("Reqdom Anime")
         .addFields(
           {
             name: "🇬🇧  English",
-            value: data?.title_english || "Unknown",
-          },
-          {
-            name: "🔤  Romaji",
-            value: data?.title || "Unknown",
+            value: data?.name || "Unknown",
           },
           {
             name: "🇯🇵  Japanese",
-            value: data?.title_japanese || "Unknown",
+            value: data?.name_kanji || "Unknown",
           },
           {
-            name: "🍫  Genres",
-            value: data?.genres?.slice(0, 3).map(genre => genre.name).join(", ") || "Unknown",
+            name: "🗣️  Nicknames",
+            value: data?.nicknames?.slice(0, 3).map(nick => nick).join(", ") || "Unknown",
             inline: true
           },
           {
-            name: "⭐ Rating",
-            value: `${data?.score || "N/A"} by ${data?.scored_by || "N/A"} people`,
+            name: "⭐ Favorites",
+            value: `${data?.favorites || "N/A"}`,
           },
+          {
+            name: "📍  From",
+            value: charOrigin?.data?.anime[0]?.anime.title || "Unknown"
+          }
         )
         .setImage(data?.images?.jpg?.image_url || data?.images?.webp?.image_url || "")
         .setColor("Blue")
@@ -94,5 +99,5 @@ export const randomAnime: SlashCommand = {
 
       return context instanceof ChatInputCommandInteraction ? await context?.editReply({ embeds: [failEmbed("Dictionary Searcher", "Api fetching failed, try again later", executor)] }) : await context?.reply({ embeds: [failEmbed("Dictionary Searcher", "Api fetching failed, try again later", executor)] })
     }
-  }
+  },
 }

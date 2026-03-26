@@ -5,8 +5,7 @@
   "private": true,
   "scripts": {
     "start": "bun run index.ts",
-    "del": "bun run commands/unregister.ts",
-    "add": "bun run commands/register.ts"
+    "del": "bun run commands/unregister.ts"
   },
   "devDependencies": {
     "@types/bun": "latest"
@@ -15,6 +14,7 @@
     "typescript": "^5"
   },
   "dependencies": {
-    "discord.js": "^14.25.1"
+    "discord.js": "^14.25.1",
+    "mysql2": "^3.20.0"
   }
 }

@@ -1,13 +1,24 @@
-import { ChatInputCommandInteraction, Collection, InteractionResponse, Message, SlashCommandBuilder, SlashCommandSubcommandBuilder, type SlashCommandOptionsOnlyBuilder } from "discord.js"
+import { ChatInputCommandInteraction, InteractionResponse, Message, SlashCommandBuilder, SlashCommandSubcommandBuilder, type SlashCommandOptionsOnlyBuilder } from "discord.js"
+import type { RowDataPacket } from "mysql2";
 
 export interface SlashCommand {
   cooldown?: number;
+  aliases?: string[];
   data: SlashCommandBuilder | SlashCommandOptionsOnlyBuilder | SlashCommandSubcommandBuilder;
-  execute: (interaction: ChatInputCommandInteraction) => Promise<Message<boolean> | undefined | InteractionResponse<boolean> | void> | InteractionResponse<boolean>
+  execute: (context: ChatInputCommandInteraction | Message, args?: string[]) => Promise<Message<boolean> | undefined | InteractionResponse<boolean> | void> | InteractionResponse<boolean> | void
 }
-
-declare module "discord.js" {
-  export interface Client {
-    cooldowns: Collection<string, Collection<string, number>>
-  }
+export interface CooldownRows extends RowDataPacket {
+  userId: string
+  commandName: string
+  lastUsed: number
+}
+export interface CommandSettingsRows extends RowDataPacket {
+  commandName: string
+  cooldown: number
+  allowedChannelId: string
+}
+export interface GuildSettingsRows extends RowDataPacket {
+  guildId: string
+  prefix: string
+  allowedChannels: string
 }

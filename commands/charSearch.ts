@@ -1,5 +1,7 @@
-import { EmbedBuilder, SlashCommandBuilder } from "discord.js"
+import { ChatInputCommandInteraction, EmbedBuilder, SlashCommandBuilder } from "discord.js"
 import type { SlashCommand } from "../utils/types"
+import { getCharOrigin } from "../utils/func"
+import { failEmbed } from "../utils/embeds"
 
 interface ApiData {
   data: {
@@ -18,36 +20,14 @@ interface ApiData {
     favorites: number
   }[]
 }
-type CharOrigin = {
-  data: {
-    anime: {
-      anime: {
-        title: string
-      }
-    }[]
-  }
-}
 
-const getCharOrigin = async (id: number) => {
-  if (id < 0) {
-    return
-  }
-
-  const data = await fetch(`https://api.jikan.moe/v4/characters/${encodeURIComponent(id)}/full`)
-
-  if (data.status !== 200) {
-    console.error(`Error occured when fetching data`)
-  }
-
-  const json = await data.json() as CharOrigin
-
-  return json
-}
 const getAnimeChar = async (char: string) => {
   const data = await fetch(`https://api.jikan.moe/v4/characters?q=${encodeURIComponent(char)}`)
 
-  if (data.status !== 200) {
+  if (!data.ok) {
     console.error(`Error occured when fetching data`)
+
+    return
   }
 
   const json = await data.json() as ApiData
@@ -55,42 +35,89 @@ const getAnimeChar = async (char: string) => {
   return json
 }
 export const charSearch: SlashCommand = {
-  cooldown: 10,
   data: new SlashCommandBuilder()
     .setName("search-char")
     .setDescription("Search an anime character by name")
     .addStringOption(option =>
-      option.setName("char")
+      option.setName("name")
         .setDescription("The char name you want to search")
         .setRequired(true)
-    ),
+    )
+    .addStringOption(option =>
+      option.setName("origin")
+        .setDescription("The movie, anime, etc that char from")
+        .setRequired(false)),
+  aliases: ["sch"],
 
-  async execute(interaction) {
-    const char = interaction.options.getString("char", true).toLowerCase()
-    await interaction.deferReply()
+  async execute(context, args) {
+    const executor = context instanceof ChatInputCommandInteraction ? context?.user : context?.author
+    let nameQuery: string | null = null
+    let originQuery: string | null = null
+    let charOrigin = null;
+    let result = null
+
+    if (context instanceof ChatInputCommandInteraction) {
+      nameQuery = context?.options?.getString("name", true)
+      originQuery = context?.options?.getString("origin", false)
+      await context?.deferReply()
+    } else {
+      if (!args || args?.length === 0) {
+        nameQuery = null
+        originQuery = null
+      } else {
+        const fromIndex = args?.findIndex(arg => arg.toLowerCase() === "from")
+
+        if (fromIndex !== -1) {
+          nameQuery = args?.slice(0, fromIndex).join(" ")
+          originQuery = args?.slice(fromIndex + 1).join(" ")
+        } else {
+          nameQuery = args?.join(" ")
+          originQuery = null
+        }
+      }
+    }
+
+    if (!nameQuery) {
+      return context instanceof ChatInputCommandInteraction ? await context?.editReply({ embeds: [failEmbed("Char Searcher", "Provide a char name to be searched", executor)] }) : await context?.reply({ embeds: [failEmbed("Char Searcher", "Provide a char name to be searched", executor)] })
+    }
 
     try {
-      const animeChar = await getAnimeChar(char)
+      const animeChar = await getAnimeChar(nameQuery)
 
       if (!animeChar?.data || animeChar?.data?.length === 0) {
-        return await interaction.editReply(`The char ${char} can not be found`)
+        return context instanceof ChatInputCommandInteraction ? await context?.editReply({ embeds: [failEmbed("Char Searcher", `The char **${nameQuery}** can not be found`, executor)] }) : await context?.reply({ embeds: [failEmbed("Char Searcher", `The char **${nameQuery}** can not be found`, executor)] })
       }
 
-      const result = animeChar?.data?.find(data => {
-        const query = char.toLowerCase().trim()
-        const reversed = query.split(" ").reverse().join(" ")
+      for (const data of animeChar?.data || []) {
+        const query = nameQuery?.toLowerCase().trim()
+        const reversed = query?.split(" ").reverse().join(" ")
         const name = data?.name?.toLowerCase() || ""
-        const nicknames = data?.nicknames?.map(nick => nick.toLowerCase()) || []
-        const nickMatch = nicknames.includes(query)
-        const nameMatch = name.includes(query) || name.includes(reversed)
 
-        return nickMatch || nameMatch
-      })
+        const nickMatch = data?.nicknames?.some(nick => nick.toLowerCase().includes(query))
+        const nameMatch = name?.includes(query) || name?.includes(reversed)
 
-      if (!result?.mal_id) return
+        if (!(nickMatch || nameMatch)) continue
 
-      const charOrigin = await getCharOrigin(result?.mal_id)
-      const user = interaction.user
+        if (originQuery) {
+          const origin = await getCharOrigin(data?.mal_id)
+          const originMatch = origin?.data?.anime?.some(anime => anime?.anime?.title?.toLowerCase().includes(originQuery.toLowerCase()))
+
+          if (!originMatch) continue
+
+          result = data
+          charOrigin = origin
+          break
+        }
+
+        result = data
+        charOrigin = await getCharOrigin(data?.mal_id)
+        break
+      }
+
+      if (!result) {
+        return context instanceof ChatInputCommandInteraction ? await context?.editReply({ embeds: [failEmbed("Char Searcher", `No matched character found for **${nameQuery}**`, executor)] }) : await context?.reply({ embeds: [failEmbed("Char Searcher", `No matched character found for **${nameQuery}**`, executor)] })
+      }
+
       const embed = new EmbedBuilder()
         .setTitle("Character Search")
         .addFields(
@@ -107,20 +134,23 @@ export const charSearch: SlashCommand = {
             value: result?.favorites?.toString() || "N/A"
           },
           {
-            name: "📍  Origin",
-            value: charOrigin?.data?.anime[0]?.anime.title || "Unknown"
+            name: "📍  From",
+            value: charOrigin?.data?.anime[0]?.anime?.title || "Unknown"
           }
         )
         .setImage(result?.images?.jpg?.image_url || result?.images?.webp?.image_url || "")
         .setColor("Blue")
-        .setFooter({ iconURL: user.displayAvatarURL(), text: `Ran by ${user.username}` })
+        .setFooter({ iconURL: executor?.displayAvatarURL(), text: `Req by ${executor?.username}` })
         .setTimestamp()
 
-      return await interaction.editReply({ embeds: [embed] })
+      if (context instanceof ChatInputCommandInteraction) {
+        return await context.editReply({ embeds: [embed] })
+      } else {
+        return await context.reply({ embeds: [embed] })
+      }
     } catch (error) {
       console.error(`Error occured when fetching data: ${error}`)
-
-      return await interaction.editReply({ content: "❌ Api fetching failed, try again later" })
+      return context instanceof ChatInputCommandInteraction ? await context?.editReply({ embeds: [failEmbed("Char Searcher", "Api fetching failed, try again later", executor)] }) : await context?.reply({ embeds: [failEmbed("Char Searcher", "Api fetching failed, try again later", executor)] })
     }
   },
 }
