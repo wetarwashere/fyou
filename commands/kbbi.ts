@@ -1,28 +1,8 @@
 import { ChatInputCommandInteraction, EmbedBuilder, SlashCommandBuilder } from "discord.js"
 import type { SlashCommand } from "../utils/types"
 import { failEmbed } from "../utils/embeds"
+import { getWordFromKbbi } from "../utils/func"
 
-interface ApiData {
-  data: {
-    word: string,
-    lema: string,
-    arti: { deskripsi: string }[]
-  }[]
-}
-
-const getWordData = async (input: string) => {
-  const data = await fetch(`https://openapi.x-labs.my.id/kbbi/search/${encodeURIComponent(input)}`)
-
-  if (!data.ok) {
-    console.error(`Error occured when fetching data`)
-
-    return
-  }
-
-  const json = await data.json() as ApiData
-
-  return json
-}
 export const kbbi: SlashCommand = {
   data: new SlashCommandBuilder().setName("kbbi").setDescription("Search a word for its definition in the kbbi").addStringOption(option =>
     option.setName("word")
@@ -49,7 +29,7 @@ export const kbbi: SlashCommand = {
     }
 
     try {
-      const wordData = await getWordData(wordQuery)
+      const wordData = await getWordFromKbbi(wordQuery)
 
       if (!wordData || wordData.data.length === 0) {
         return context instanceof ChatInputCommandInteraction ? await context?.editReply({ embeds: [failEmbed("Dictionary Searcher", `The word **${wordQuery}** can not be found!`, executor)] }) : await context?.reply({ embeds: [failEmbed("Dictionary Searcher", `The word **${wordQuery}** can not be found!`, executor)] })

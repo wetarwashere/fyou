@@ -1,40 +1,8 @@
 import { ChatInputCommandInteraction, EmbedBuilder, SlashCommandBuilder } from "discord.js"
 import type { SlashCommand } from "../utils/types"
 import { failEmbed } from "../utils/embeds"
+import { getRandomAnime } from "../utils/func"
 
-type ApiData = {
-  data: {
-    mal_id: number,
-    images?: {
-      jpg: {
-        image_url: string
-      },
-      webp: {
-        image_url: string
-      }
-    }
-    title: string,
-    title_english?: string,
-    title_japanese: string,
-    score: number,
-    scored_by: number,
-    genres: { mal_id: number, name: string, url: string }[]
-  }
-}
-
-const getReqdomAnime = async () => {
-  const data = await fetch("https://api.jikan.moe/v4/random/anime")
-
-  if (!data.ok) {
-    console.error(`Error occured when fetching data`)
-
-    return
-  }
-
-  const json = await data.json() as ApiData
-
-  return json
-}
 export const randomAnime: SlashCommand = {
   data: new SlashCommandBuilder()
     .setName("random-anime")
@@ -47,7 +15,7 @@ export const randomAnime: SlashCommand = {
     if (context instanceof ChatInputCommandInteraction) await context?.deferReply()
 
     try {
-      const animeData = await getReqdomAnime()
+      const animeData = await getRandomAnime()
 
       if (!animeData) {
         return context instanceof ChatInputCommandInteraction ? await context?.editReply({ embeds: [failEmbed("Reqdom Anime", "Failed to fetch random anime", executor)] }) : await context?.reply({ embeds: [failEmbed("Random Anime", "Failed to fetch random anime", executor)] })

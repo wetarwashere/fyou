@@ -1,34 +1,40 @@
 import { Collection, REST, Routes, Client, GatewayIntentBits } from "discord.js"
-import type { SlashCommand } from "./types";
+import type { CharData, CharOrigin, DictWordData, KbbiWordData, RandomAnimeData, RandomCharData, SlashCommand } from "./types";
 import config from "../config.json"
 import path from "node:path"
 import fs from "node:fs"
 import { pathToFileURL } from "node:url";
 
-type CharOrigin = {
-  data: {
-    anime: {
-      anime: {
-        title: string
+export const getCharOrigin = async (id: number, retry = 2): Promise<CharOrigin | null> => {
+  if (id < 0) return null
+
+  try {
+    const data = await fetch(`https://api.jikan.moe/v4/characters/${encodeURIComponent(id)}/full`)
+
+    if (!data.ok) {
+      if (retry > 0) {
+        await new Promise(retry => setTimeout(retry, 5000))
+
+        return getCharOrigin(id, retry - 1)
       }
-    }[]
-  }
-}
 
-export const getCharOrigin = async (id: number) => {
-  if (id < 0) {
-    return
-  }
+      console.error(`Error occured when fetching data`)
+      return null
+    }
 
-  const data = await fetch(`https://api.jikan.moe/v4/characters/${encodeURIComponent(id)}/full`)
+    const json = await data.json() as CharOrigin
 
-  if (!data.ok) {
+    return json
+  } catch {
+    if (retry > 0) {
+      await new Promise(retry => setTimeout(retry, 5000))
+
+      return getCharOrigin(id, retry - 1)
+    }
+
     console.error(`Error occured when fetching data`)
+    return null
   }
-
-  const json = await data.json() as CharOrigin
-
-  return json
 }
 export const commands = new Collection<string, SlashCommand>();
 export const registerCommand = async (clientId: string) => {
@@ -80,5 +86,152 @@ export const loadCommands = async () => {
   }
 
   return commands
+}
+export const getAnimeChar = async (char: string, retry = 2): Promise<CharData | null> => {
+  if (!char) return null
+
+  try {
+    const data = await fetch(`https://api.jikan.moe/v4/characters?q=${encodeURIComponent(char)}`)
+
+    if (!data.ok) {
+      if (retry > 0) {
+        await new Promise(retry => setTimeout(retry, 5000))
+
+        return getAnimeChar(char, retry - 1)
+      }
+
+      console.error(`Error occured when fetching data`)
+      return null
+    }
+
+    const json = await data.json() as CharData
+
+    return json
+  } catch {
+    if (retry > 0) {
+      await new Promise(retry => setTimeout(retry, 5000))
+
+      return getAnimeChar(char, retry - 1)
+    }
+
+    console.error(`Error occured when fetching data`)
+    return null
+  }
+}
+export const getRandomCharacter = async (retry = 2): Promise<RandomCharData | null> => {
+  try {
+    const data = await fetch("https://api.jikan.moe/v4/random/characters")
+
+    if (!data.ok) {
+      if (retry > 0) {
+        await new Promise(retry => setTimeout(retry, 5000))
+
+        return getRandomCharacter(retry - 1)
+      }
+
+      console.error(`Error occured when fetching data`)
+      return null
+    }
+
+    const json = await data.json() as RandomCharData
+
+    return json
+  } catch {
+    if (retry > 0) {
+      await new Promise(retry => setTimeout(retry, 5000))
+
+      return getRandomCharacter(retry - 1)
+    }
+
+    console.error(`Error occured when fetching data`)
+    return null
+  }
+}
+export const getRandomAnime = async (retry = 2): Promise<RandomAnimeData | null> => {
+  try {
+    const data = await fetch("https://api.jikan.moe/v4/random/anime")
+
+    if (!data.ok) {
+      if (retry > 0) {
+        await new Promise(retry => setTimeout(retry, 5000))
+
+        return getRandomAnime(retry - 1)
+      }
+
+      console.error(`Error occured when fetching data`)
+      return null
+    }
+
+    const json = await data.json() as RandomAnimeData
+
+    return json
+  } catch {
+    if (retry > 0) {
+      await new Promise(retry => setTimeout(retry, 5000))
+
+      return getRandomAnime(retry - 1)
+    }
+
+    console.error(`Error occured when fetching data`)
+    return null
+  }
+}
+export const getWordFromDict = async (word: string, retry = 2): Promise<DictWordData[] | null> => {
+  try {
+    const data = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`)
+
+    if (!data.ok) {
+      if (retry > 0) {
+        await new Promise(retry => setTimeout(retry, 5000))
+
+        return getWordFromDict(word, retry - 1)
+      }
+
+      console.error(`Error occured when fetching data`)
+      return null
+    }
+
+    const json = await data.json() as DictWordData[]
+
+    return json
+  } catch {
+    if (retry > 0) {
+      await new Promise(retry => setTimeout(retry, 5000))
+
+      return getWordFromDict(word, retry - 1)
+    }
+
+    console.error(`Error occured when fetching data`)
+    return null
+  }
+}
+export const getWordFromKbbi = async (word: string, retry = 2): Promise<KbbiWordData | null> => {
+  try {
+    const data = await fetch(`https://openapi.x-labs.my.id/kbbi/search/${encodeURIComponent(word)}`)
+
+    if (!data.ok) {
+      if (retry > 0) {
+        await new Promise(retry => setTimeout(retry, 5000))
+
+        return getWordFromKbbi(word, retry - 1)
+      }
+
+      console.error(`Error occured when fetching data`)
+      return null
+    }
+
+    const json = await data.json() as KbbiWordData
+
+    return json
+  } catch {
+    if (retry > 0) {
+      await new Promise(retry => setTimeout(retry, 5000))
+
+      return getWordFromKbbi(word, retry - 1)
+    }
+
+    console.error(`Error occured when fetching data`)
+    return null
+  }
 }
 export const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.MessageContent, GatewayIntentBits.GuildMessages], allowedMentions: { parse: [], repliedUser: false } })

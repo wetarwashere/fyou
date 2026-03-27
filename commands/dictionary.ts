@@ -1,31 +1,8 @@
 import { ChatInputCommandInteraction, EmbedBuilder, SlashCommandBuilder } from "discord.js"
 import type { SlashCommand } from "../utils/types"
 import { failEmbed } from "../utils/embeds"
+import { getWordFromDict } from "../utils/func"
 
-type MeaningsType = {
-  partOfSpeech: string,
-  definitions: { definition: string }[]
-}
-
-interface ApiData {
-  word: string,
-  phonetic: string,
-  meanings: MeaningsType[]
-}
-
-const getWordFromDict = async (word: string) => {
-  const data = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`)
-
-  if (!data.ok) {
-    console.error(`Error occured when fetching data`)
-
-    return
-  }
-
-  const json = await data.json() as ApiData[]
-
-  return json
-}
 export const dictionary: SlashCommand = {
   data: new SlashCommandBuilder()
     .setName("dictionary")

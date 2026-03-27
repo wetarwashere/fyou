@@ -22,3 +22,81 @@ export interface GuildSettingsRows extends RowDataPacket {
   prefix: string
   allowedChannels: string
 }
+export interface CharData {
+  data: {
+    mal_id: number
+    images?: {
+      jpg: {
+        image_url: string
+      },
+      webp: {
+        image_url: string
+      }
+    }
+    name: string
+    name_kanji: string
+    nicknames: string[]
+    favorites: number
+  }[]
+}
+export interface RandomCharData {
+  data: {
+    mal_id: number
+    images?: {
+      jpg: {
+        image_url: string
+      },
+      webp: {
+        image_url: string
+      }
+    }
+    name: string
+    name_kanji: string
+    nicknames: string[]
+    favorites: number
+  }
+}
+export interface RandomAnimeData {
+  data: {
+    mal_id: number,
+    images?: {
+      jpg: {
+        image_url: string
+      },
+      webp: {
+        image_url: string
+      }
+    }
+    title: string,
+    title_english?: string,
+    title_japanese: string,
+    score: number,
+    scored_by: number,
+    genres: { mal_id: number, name: string, url: string }[]
+  }
+}
+export interface KbbiWordData {
+  data: {
+    word: string,
+    lema: string,
+    arti: { deskripsi: string }[]
+  }[]
+}
+type MeaningsType = {
+  partOfSpeech: string,
+  definitions: { definition: string }[]
+}
+export interface DictWordData {
+  word: string,
+  phonetic: string,
+  meanings: MeaningsType[]
+}
+export type CharOrigin = {
+  data: {
+    anime: {
+      anime: {
+        title: string
+      }
+    }[]
+  }
+}

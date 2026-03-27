@@ -1,39 +1,8 @@
 import { ChatInputCommandInteraction, EmbedBuilder, SlashCommandBuilder } from "discord.js"
 import type { SlashCommand } from "../utils/types"
-import { getCharOrigin } from "../utils/func"
+import { getCharOrigin, getRandomCharacter } from "../utils/func"
 import { failEmbed } from "../utils/embeds"
 
-interface ApiData {
-  data: {
-    mal_id: number
-    images?: {
-      jpg: {
-        image_url: string
-      },
-      webp: {
-        image_url: string
-      }
-    }
-    name: string
-    name_kanji: string
-    nicknames: string[]
-    favorites: number
-  }
-}
-
-const getReqdomCharacter = async () => {
-  const data = await fetch("https://api.jikan.moe/v4/random/characters")
-
-  if (!data.ok) {
-    console.error(`Error occured when fetching data`)
-
-    return
-  }
-
-  const json = await data.json() as ApiData
-
-  return json
-}
 export const randomChar: SlashCommand = {
   data: new SlashCommandBuilder()
     .setName("random-char")
@@ -46,7 +15,7 @@ export const randomChar: SlashCommand = {
     if (context instanceof ChatInputCommandInteraction) await context?.deferReply()
 
     try {
-      const charData = await getReqdomCharacter()
+      const charData = await getRandomCharacter()
 
       if (!charData) {
         return context instanceof ChatInputCommandInteraction ? await context?.editReply({ embeds: [failEmbed("Reqdom Char", "Failed to fetch random character", executor)] }) : await context?.reply({ embeds: [failEmbed("Random Char", "Failed to fetch random character", executor)] })
@@ -81,7 +50,7 @@ export const randomChar: SlashCommand = {
           },
           {
             name: "📍  From",
-            value: charOrigin?.data?.anime[0]?.anime.title || "Unknown"
+            value: charOrigin?.data?.anime[0]?.anime?.title || "Unknown"
           }
         )
         .setImage(data?.images?.jpg?.image_url || data?.images?.webp?.image_url || "")
