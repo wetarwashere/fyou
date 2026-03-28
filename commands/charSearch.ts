@@ -73,7 +73,7 @@ export const charSearch: SlashCommand = {
 
         possibleResults?.push(data)
 
-        if (possibleResults?.length >= 5) break
+        if (possibleResults?.length >= 100) break
       }
 
       if (possibleResults.length === 0) {
@@ -133,6 +133,7 @@ export const charSearch: SlashCommand = {
           return await context.reply({ embeds: [embed] })
         }
       }
+
       const selector = new StringSelectMenuBuilder()
         .setCustomId("possible_chars")
         .setPlaceholder("Select possible characters")
@@ -183,7 +184,7 @@ export const charSearch: SlashCommand = {
 
         return await interaction?.update({ embeds: [embed], components: [] })
       } catch {
-        return await message?.edit({ content: "Selection timed out", components: [] })
+        return await message?.edit({ embeds: [failEmbed("Char Searcher", "Interaction timeout", executor)], components: [] })
       }
     } catch (error) {
       console.error(`Error occured when fetching data: ${error}`)
